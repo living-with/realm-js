@@ -16,12 +16,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-import type { AnyRealmObject } from "./Object";
-import type { AnyCollection, Collection } from "./Collection";
+import type { AnyRealmObject, RealmObject } from "./Object";
+import type { AnyCollection } from "./Collection";
 import type { Counter } from "./Counter";
 import type { AnyDictionary, Dictionary } from "./Dictionary";
 import type { AnyList, List } from "./List";
-import type { Realm } from "./Realm";
 import type { AnySet, RealmSet } from "./Set";
 
 type ExtractPropertyNamesOfType<T, PropType> = {
@@ -31,6 +30,17 @@ type ExtractPropertyNamesOfType<T, PropType> = {
 type ExtractPropertyNamesOfTypeExcludingNullability<T, PropType> = {
   [K in keyof T]: Exclude<T[K], null | undefined> extends PropType ? K : never;
 }[keyof T];
+
+/**
+ * Exchanges properties defined as Realm.Object<Model> with an optional Unmanaged<Model>.
+ */
+type RealmObjectRemappedModelPart<T> = {
+  [K in ExtractPropertyNamesOfType<T, AnyRealmObject>]?: T[K] extends RealmObject<infer GT> ? Unmanaged<GT> : never;
+} & {
+  [K in ExtractPropertyNamesOfType<T, AnyRealmObject | null>]?: T[K] extends RealmObject<infer GT> | null
+    ? Unmanaged<GT> | null
+    : never;
+};
 
 /**
  * Exchanges properties defined as {@link List} with an optional {@link Array}.
@@ -68,9 +78,15 @@ export type OmittedRealmTypes<T> = Omit<
   | keyof AnyRealmObject
   /* eslint-disable-next-line @typescript-eslint/ban-types */
   | ExtractPropertyNamesOfType<T, Function> // TODO: Figure out the use-case for this
+  | ExtractPropertyNamesOfTypeExcludingNullability<T, Counter>
+>;
+
+type OmittedNestedRealmTypes<T> = Omit<
+  T,
+  | ExtractPropertyNamesOfType<T, AnyRealmObject>
+  | ExtractPropertyNamesOfType<T, AnyRealmObject | null>
   | ExtractPropertyNamesOfType<T, AnyCollection>
   | ExtractPropertyNamesOfType<T, AnyDictionary>
-  | ExtractPropertyNamesOfTypeExcludingNullability<T, Counter>
 >;
 
 /** Make all fields optional except those specified in K */
@@ -86,18 +102,19 @@ type OmittedRealmTypesWithRequired<T, RequiredProperties extends keyof OmittedRe
 >;
 
 /** Remaps realm types to "simpler" types (arrays and objects) */
-type RemappedRealmTypes<T> = RealmListRemappedModelPart<T> &
+type RemappedRealmTypes<T> = RealmObjectRemappedModelPart<T> &
+  RealmListRemappedModelPart<T> &
   RealmDictionaryRemappedModelPart<T> &
   RealmSetRemappedModelPart<T> &
   RealmCounterRemappedModelPart<T>;
 
 /**
- * Joins `T` stripped of all keys which value extends {@link Collection} and all inherited from {@link Realm.Object},
- * with only the keys which value extends {@link List}, remapped as {@link Array}. All properties are optional
- * except those specified in `RequiredProperties`.
+ * Joins `T` stripped of all keys which value extends Realm classes such as {@link List} and {@link Object},
+ * with the keys whose values extends Realm classes remapped to simpler types (for example {@link List} is remapped as {@link Array}).
+ * All properties are optional except those specified in `RequiredProperties`.
  */
 export type Unmanaged<T, RequiredProperties extends keyof OmittedRealmTypes<T> = never> = OmittedRealmTypesWithRequired<
-  T,
+  OmittedNestedRealmTypes<T> & RemappedRealmTypes<T>,
+  // @ts-expect-error TODO - what's the cause of "Type string is not assignable to type Exclude<ExtractPropertyNamesOfTypeExcludingNullability<T, Counter>, keyof AnyRealmObject | ExtractPropertyNamesOfType<...> | ExtractPropertyNamesOfTypeExcludingNullability<...>> | ... 5 more ... | Exclude<...>"
   RequiredProperties
-> &
-  RemappedRealmTypes<T>;
+>;
