@@ -23,7 +23,7 @@ import type { AnyDictionary, Dictionary } from "./Dictionary";
 import type { AnyList, List } from "./List";
 import type { AnySet, RealmSet } from "./Set";
 
-type ExtractPropertyNamesOfType<T, PropType> = {
+export type ExtractPropertyNamesOfType<T, PropType> = {
   [K in keyof T]: T[K] extends PropType ? K : never;
 }[keyof T];
 
@@ -81,7 +81,7 @@ export type OmittedRealmTypes<T> = Omit<
   | ExtractPropertyNamesOfTypeExcludingNullability<T, Counter>
 >;
 
-type OmittedNestedRealmTypes<T> = Omit<
+export type OmittedNestedRealmTypes<T> = Omit<
   T,
   | ExtractPropertyNamesOfType<T, AnyRealmObject>
   | ExtractPropertyNamesOfType<T, AnyRealmObject | null>

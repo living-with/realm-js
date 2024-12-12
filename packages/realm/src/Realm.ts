@@ -23,6 +23,7 @@ import { extendDebug } from "./debug";
 import { flags } from "./flags";
 import { injectIndirect } from "./indirect";
 import { fs, garbageCollection } from "./platform";
+import { ExtractPropertyNamesOfType, OmittedRealmTypes } from './Unmanaged'
 import type { Unmanaged } from "./Unmanaged";
 import { type AnyRealmObject, RealmObject } from "./Object";
 import { type AnyResults, Results } from "./Results";
@@ -1240,6 +1241,9 @@ export namespace Realm {
   export import SortDescriptor = ns.SortDescriptor;
   export import TypeAssertionError = ns.TypeAssertionError;
   export import Unmanaged = ns.Unmanaged;
+  export import OmittedRealmTypes = ns.OmittedRealmTypes;
+  export import OmittedNestedRealmTypes = ns.OmittedNestedRealmTypes;
+  export import ExtractPropertyNamesOfType = ns.ExtractPropertyNamesOfType;
   export import UpdateMode = ns.UpdateMode;
   export import UserTypeName = ns.UserTypeName;
 
